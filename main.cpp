@@ -9,18 +9,92 @@
 
 using namespace std;
 
+// Реализация паттерна "Стратегия"
+enum class ShootingMannerEnum : int
+{
+    SingleShots,
+    ShortBursts,
+    LongBursts,
+
+    None
+};
+
+class ShootingStrategy
+{
+public:
+    virtual ~ShootingStrategy() {}
+    virtual void Shoot() = 0;
+};
+
+class SingleShotsShootingStrategy : public ShootingStrategy
+{
+    virtual void Shoot() { wcout << L"Стрельба одиночными..."; }
+};
+
+class ShortBurstsShootingStrategy : public ShootingStrategy
+{
+    virtual void Shoot() { wcout << L"Стрельба короткими очередями..."; }
+};
+
+class LongBurstsShootingStrategy : public ShootingStrategy
+{
+    virtual void Shoot() { wcout << L"Стрельба длинными очередями..."; }
+};
+
+// Фабричный метод для создания стратегий стрельбы
+ShootingStrategy *CreateShootingStrategy(ShootingMannerEnum shootingManner)
+{
+    switch(shootingManner)
+    {
+        case ShootingMannerEnum::SingleShots: return new SingleShotsShootingStrategy;
+        case ShootingMannerEnum::ShortBursts: return new ShortBurstsShootingStrategy;
+        case ShootingMannerEnum::LongBursts: return new LongBurstsShootingStrategy;
+
+        default: return nullptr;
+    }
+}
+
+
 // Родительский класс
 class Firearms
 {
 private:
     bool FirearmsIsOK;
 
+    ShootingStrategy *ShootingManner;
+
+    // Реализация функции, осуществляющей стрельбу согласно стратегии
+    void ShootUsingStrategy()
+    {
+        if (ShootingManner == nullptr)
+        {
+            wcout << L"Стратегия стрельбы не определена";
+            return;
+        }
+        else
+        {
+            ShootingManner->Shoot();
+        }
+    }
+
 public:
     Firearms();
-    virtual void Shoot() = 0;
+    virtual void PrintType() = 0;
     virtual void Reload() = 0;
     virtual void Clean() = 0;
     virtual ~Firearms();
+
+    // Фиксация алгоритма согласно паттерну "Шаблонный метод"
+    void Shoot()
+    {
+        PrintType();
+        cout << " : ";
+
+        ShootUsingStrategy();
+        cout << endl;
+    }
+
+    void SetShootingManner(ShootingStrategy *shootingManner) { ShootingManner = shootingManner; }
 
 protected:
     double Calibre; // Калибр в миллиметрах
@@ -47,10 +121,10 @@ public:
     Colt_M1911();
     ~Colt_M1911();
 
-    void Shoot();
+    void PrintType();
     void Reload();
     void Clean();
-};
+ };
 
 Colt_M1911::Colt_M1911()
 {
@@ -58,6 +132,8 @@ Colt_M1911::Colt_M1911()
     Ammunition = 7;
     Weight = 1120;
     wcout << L"Создаётся образец Кольта М1911..."  << endl;
+
+    SetShootingManner(CreateShootingStrategy(ShootingMannerEnum::SingleShots));
 }
 
 Colt_M1911::~Colt_M1911()
@@ -65,9 +141,9 @@ Colt_M1911::~Colt_M1911()
     wcout << L"Удаляется образец Кольта М1911..."  << endl;
 }
 
-void Colt_M1911::Shoot()
+void Colt_M1911::PrintType()
 {
-    wcout << L"Выстрел из Кольта М1911" << endl;
+    wcout << L"Кольт М1911";
 }
 void Colt_M1911::Reload()
 {
@@ -86,7 +162,7 @@ public:
     RPK();
     ~RPK();
 
-    void Shoot();
+    void PrintType();
     void Reload();
     void Clean();
 };
@@ -97,6 +173,8 @@ RPK::RPK()
     Ammunition = 75;
     Weight = 7100;
     wcout << L"Создаётся образец РПК..."  << endl;
+
+    SetShootingManner(CreateShootingStrategy(ShootingMannerEnum::LongBursts));
 }
 
 RPK::~RPK()
@@ -104,9 +182,9 @@ RPK::~RPK()
     wcout << L"Удаляется образец РПК..."  << endl;
 }
 
-void RPK::Shoot()
+void RPK::PrintType()
 {
-    wcout << L"Выстрел из РПК" << endl;
+    wcout << L"РПК";
 }
 void RPK::Reload()
 {
@@ -125,7 +203,7 @@ public:
     VSS_Vintorez();
     ~VSS_Vintorez();
 
-    void Shoot();
+    void PrintType();
     void Reload();
     void Clean();
 };
@@ -136,6 +214,8 @@ VSS_Vintorez::VSS_Vintorez()
     Ammunition = 10;
     Weight = 3700;
     wcout << L"Создаётся образец ВСС Винторез..."  << endl;
+
+    SetShootingManner(CreateShootingStrategy(ShootingMannerEnum::ShortBursts));
 }
 
 VSS_Vintorez::~VSS_Vintorez()
@@ -143,9 +223,9 @@ VSS_Vintorez::~VSS_Vintorez()
     wcout << L"Удаляется образец ВСС Винторез..."  << endl;
 }
 
-void VSS_Vintorez::Shoot()
+void VSS_Vintorez::PrintType()
 {
-    wcout << L"Выстрел из ВСС Винторез" << endl;
+    wcout << L"ВСС Винторез";
 }
 void VSS_Vintorez::Reload()
 {
@@ -298,7 +378,7 @@ int main()
 
     // Демонстрация работы декораторов
 
-    wcout << endl << L"Действие декораторов на массив образцов оружия: " << endl << endl;
+    wcout << endl << L"Воздействие декораторов на массив образцов оружия: " << endl << endl;
     Iterator<Firearms*> *allDecoratorsIt = new FirearmsNumberDecorator(new FirearmsCleaningDecorator(new FirearmsReloadingDecorator(firearms_array.GetIterator())));
     Salute(allDecoratorsIt);
     delete allDecoratorsIt;
